@@ -9,8 +9,12 @@ dir_mat := $(RWD)/01_data_mat
 dir_r := $(RWD)/01_data_r
 dir_fcs := $(RWD)/01_fcs_files
 dir_panel := $(RWD)/01_panel
-dir_truth := $(RWD)/02_truth
-dir_plot_cell_density := $(RWD)/04_plot_cell_density
+dir_truth := $(RWD)/01_truth
+dir_data_norm := $(RWD)/01_data_norm
+dir_plot_cell_density := $(RWD)/02_plot_cell_density
+dir_plot_data_distr := $(RWD)/02_plot_data_distr
+dir_run_dim_reduction := $(RWD)/02_run_dim_reduction
+dir_plot_dim_reduction_truth := $(RWD)/02_plot_dim_reduction
 
 file_mat := albeck2008_Poisson_10000_25000_100.mat
 
@@ -21,7 +25,7 @@ FCS := sim1_sub1
 
 ## Define the default rule (makefiles are usually written so that the first target is for compiling the entire program)
 .PHONY: all
-all: mkdir_rout plot_cell_density_goal
+all: mkdir_rout plot_cell_density_goal plot_data_distr_goal plot_dim_reduction_truth_goal
 
 
 ### Make sure no intermediate files are deleted
@@ -36,29 +40,94 @@ mkdir_rout:
 ### Extract simulated data from the .mat file
 # ----------------------------------------------------------------------
 
-$(dir_r)/$(FCS).rds $(dir_fcs)/$(FCS).fcs $(dir_panel)/$(DATA)_panel.txt $(dir_truth)/$(FCS)_truth_trajectory.txt: \
- $(dir_mat)/$(file_mat) $(RCODE)/01_readin_simulatios.R
-	$R "--args rwd='$(RWD)' outdir_r='$(dir_r)' outdir_fcs='$(dir_fcs)' outdir_panel='$(dir_panel)' \
-	outdir_truth='$(dir_truth)' path_data='$(dir_mat)/$(file_mat)'" $(RCODE)/01_readin_simulatios.R \
-	$(ROUT)/01_readin_simulatios.Rout
-	tail $(ROUT)/01_readin_simulatios.Rout
+$(dir_r)/$(FCS).rds $(dir_fcs)/$(FCS).fcs $(dir_panel)/$(DATA)_panel.txt $(dir_truth)/$(FCS)_truth_trajectory.txt: $(dir_mat)/$(file_mat) $(RCODE)/01_readin_simulatios.R
+	$R "--args rwd='$(RWD)' outdir_r='$(dir_r)' outdir_fcs='$(dir_fcs)' outdir_panel='$(dir_panel)' outdir_truth='$(dir_truth)' path_data='$(dir_mat)/$(file_mat)'" $(RCODE)/01_readin_simulatios.R $(ROUT)/01_readin_simulatios.Rout
 
 # ----------------------------------------------------------------------
-### Plot cell density over time
+### Plot cell density over time for the truth trajectory
 # ----------------------------------------------------------------------
+
+METHOD := truth
 
 .PHONY: plot_cell_density_goal
-plot_cell_density_goal: $(addprefix $(dir_plot_cell_density)/, $(addsuffix _truth_cell_density_density.pdf, $(foreach X,$(FCS),$X)))
+plot_cell_density_goal: $(addprefix $(dir_plot_cell_density)/, $(addsuffix _$(METHOD)_cell_density_density.pdf, $(FCS)))
 
 define plot_cell_density_rule
-$(dir_plot_cell_density)/$(1)_truth_cell_density_density.pdf $(dir_plot_cell_density)/$(1)_truth_cell_density_hist.pdf: \
-$(dir_truth)/$(1)_truth_trajectory.txt $(RCODE)/02_plot_cell_density_over_time.R
-	$R "--args rwd='$(RWD)' outdir='$(dir_plot_cell_density)' prefix='$(1)_truth_' \
-	path_trajectory='$(dir_truth)/$(1)_truth_trajectory.txt'" $(RCODE)/02_plot_cell_density_over_time.R \
-	$(ROUT)/02_plot_cell_density_over_time.Rout
-	tail $(ROUT)/02_plot_cell_density_over_time.Rout
+$(dir_plot_cell_density)/$(1)_$(METHOD)_cell_density_density.pdf: $(dir_truth)/$(1)_$(METHOD)_trajectory.txt $(RCODE)/02_plot_cell_density_over_time.R
+	$R "--args rwd='$(RWD)' outdir='$(dir_plot_cell_density)' prefix='$(1)_$(METHOD)_' path_trajectory='$(dir_truth)/$(1)_$(METHOD)_trajectory.txt'" $(RCODE)/02_plot_cell_density_over_time.R $(ROUT)/02_plot_cell_density_over_time.Rout
 endef
 $(foreach i,$(FCS),$(eval $(call plot_cell_density_rule,$(i))))
+
+
+# ----------------------------------------------------------------------
+### Data normalization - arcsineh
+# ----------------------------------------------------------------------
+
+define data_normalization_rule
+$(dir_data_norm)/$(1)_norm.fcs $(dir_data_norm)/$(1)_norm.rds: $(dir_fcs)/$(1).fcs $(RCODE)/01_data_normalization.R
+	$R "--args rwd='$(RWD)' outdir='$(dir_data_norm)' prefix='$(1)_' path_fcs_file='$(dir_fcs)/$(1).fcs' path_panel='$(dir_panel)/$(DATA)_panel.txt'" $(RCODE)/01_data_normalization.R $(ROUT)/01_data_normalization.Rout
+endef
+$(foreach i,$(FCS),$(eval $(call data_normalization_rule,$(i))))
+
+
+# ----------------------------------------------------------------------
+### Plot data distributions
+# ----------------------------------------------------------------------
+
+
+.PHONY: plot_data_distr_goal
+plot_data_distr_goal: $(addprefix $(dir_plot_data_distr)/,$(addsuffix _norm_distr_density.pdf,$(FCS)))
+
+define plot_data_distr_rule
+$(dir_plot_data_distr)/$(1)_norm_distr_density.pdf: $(dir_data_norm)/$(1)_norm.fcs $(RCODE)/02_plot_data_distr.R
+	$R "--args rwd='$(RWD)' outdir='$(dir_plot_data_distr)' prefix='$(1)_norm_' path_fcs_file='$(dir_data_norm)/$(1)_norm.fcs'" $(RCODE)/02_plot_data_distr.R $(ROUT)/02_plot_data_distr.Rout
+endef
+$(foreach i,$(FCS),$(eval $(call plot_data_distr_rule,$(i))))
+
+
+
+# ----------------------------------------------------------------------
+### Run dimension reduction
+# ----------------------------------------------------------------------
+
+DIM_RED_METHODS := pca tsne diffusion
+
+define run_dim_reduction_rule
+$(addprefix $(dir_run_dim_reduction)/$(1)_norm_,$(addsuffix .txt,$(DIM_RED_METHODS))): $(dir_data_norm)/$(1)_norm.fcs $(RCODE)/02_run_dim_reduction.R
+	$R "--args rwd='$(RWD)' outdir='$(dir_run_dim_reduction)' prefix='$(1)_norm_' path_fcs_file='$(dir_data_norm)/$(1)_norm.fcs'" $(RCODE)/02_run_dim_reduction.R $(ROUT)/02_run_dim_reduction.Rout
+endef
+$(foreach i,$(FCS),$(eval $(call run_dim_reduction_rule,$(i))))
+
+
+# ----------------------------------------------------------------------
+### Plot dimension reduction with truth as a heat
+# ----------------------------------------------------------------------
+
+METHOD := truth
+
+.PHONY: plot_dim_reduction_truth_goal
+plot_dim_reduction_truth_goal: $(addprefix $(dir_plot_dim_reduction_truth)/,$(addsuffix _norm_$(METHOD)_tsne_dim_red.pdf,$(FCS))) $(addprefix $(dir_plot_dim_reduction_truth)/,$(addsuffix _norm_$(METHOD)_pca_dim_red.pdf,$(FCS))) $(addprefix $(dir_plot_dim_reduction_truth)/,$(addsuffix _norm_$(METHOD)_diffusion_dim_red.pdf,$(FCS)))
+
+define plot_dim_reduction_truth_rule
+$(dir_plot_dim_reduction_truth)/$(1)_norm_$(METHOD)_$(2)_dim_red.pdf: $(dir_run_dim_reduction)/$(1)_norm_$(2).txt $(dir_truth)/$(1)_$(METHOD)_trajectory.txt $(RCODE)/02_plot_dim_reduction.R
+	$R "--args rwd='$(RWD)' outdir='$(dir_plot_dim_reduction_truth)' prefix='$(1)_norm_$(METHOD)_$(2)_' path_dim_reduction='$(dir_run_dim_reduction)/$(1)_norm_$(2).txt' path_trajectory='$(dir_truth)/$(1)_$(METHOD)_trajectory.txt'" $(RCODE)/02_plot_dim_reduction.R $(ROUT)/02_plot_dim_reduction.Rout
+endef
+$(foreach i,$(FCS),$(foreach j,$(DIM_RED_METHODS),$(eval $(call plot_dim_reduction_truth_rule,$(i),$(j)))))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

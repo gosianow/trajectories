@@ -2,7 +2,7 @@
 ## <<>>
 
 # BioC 3.3
-# Created 20 Dec 2016
+# Created 22 Dec 2016
 
 ##############################################################################
 Sys.time()
@@ -17,10 +17,10 @@ library(reshape2)
 ##############################################################################
 
 rwd='/Users/gosia/Dropbox/UZH/trajectories_data/simulation1'
-outdir='02_plot_cell_density'
-prefix='sim1_sub1_truth_'
+outdir='02_plot_dim_reduction'
+prefix='sim1_sub1_norm_truth_pca_'
+path_dim_reduction='02_run_dim_reduction/sim1_sub1_norm_pca.txt'
 path_trajectory='01_truth/sim1_sub1_truth_trajectory.txt'
-
 
 ##############################################################################
 # Read in the arguments
@@ -45,50 +45,29 @@ if(!file.exists(outdir))
 
 ##############################################################################
 
+
+data <- read.table(path_dim_reduction, header = TRUE, sep = "\t", as.is = TRUE)
+
 trajectory <- read.table(path_trajectory, header = TRUE, sep = "\t", as.is = TRUE)
 
 
-ggp <- ggplot(trajectory, aes(x = trajectory)) +
-  geom_density(adjust = 0.5, fill = "blue", alpha = 0.3) + 
-  theme_bw()
+
+### Plotting
+
+ggdf <- cbind(data, trajectory)
 
 
-pdf(file.path(outdir, paste0(prefix, "cell_density_density.pdf")), width = 7, height = 3)
+ggp <- ggplot(ggdf,  aes(x = dim1, y = dim2, color = trajectory)) +
+  geom_point() +
+  labs(x = "dim1", y = "dim2") + 
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  scale_colour_distiller(palette = "Spectral")
+
+
+pdf(file.path(outdir, paste0(prefix, "dim_red.pdf")), width = 9, height = 7)
 print(ggp)
 dev.off()
-
-
-
-ggp <- ggplot(trajectory, aes(x = trajectory)) +
-  geom_histogram(bins = 200) + 
-  theme_bw()
-
-
-pdf(file.path(outdir, paste0(prefix, "cell_density_hist.pdf")), width = 7, height = 3)
-print(ggp)
-dev.off()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -98,6 +77,16 @@ dev.off()
 
 
 sessionInfo()
+
+
+
+
+
+
+
+
+
+
 
 ##############################################################################
 ### Done!

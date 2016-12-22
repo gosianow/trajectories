@@ -12,6 +12,8 @@ Sys.time()
 library(R.matlab)
 library(flowCore)
 library(Biobase)
+library(ggplot2)
+library(reshape2)
 
 ##############################################################################
 # Test arguments
@@ -21,7 +23,7 @@ rwd='/Users/gosia/Dropbox/UZH/trajectories_data/simulation1'
 outdir_r='01_data_r'
 outdir_fcs='01_fcs_files'
 outdir_panel='01_panel'
-outdir_truth='02_truth'
+outdir_truth='01_truth'
 path_data='01_data_mat/albeck2008_Poisson_10000_25000_100.mat'
 
 
@@ -53,6 +55,7 @@ if(!file.exists(outdir_panel))
 
 if(!file.exists(outdir_truth)) 
   dir.create(outdir_truth, recursive = TRUE)
+
 
 ##############################################################################
 
@@ -121,6 +124,14 @@ trajectories_fcs_sub <- flowFrame(exprs = trajectoriesm[cell_sub, ], parameters 
 write.FCS(trajectories_fcs_sub, filename = file.path(outdir_fcs, paste0("sim1_sub1.fcs")))
 
 
+# ------------------------------------------------------------------------
+### Save the true time trajectory
+
+true_trajectory <- data.frame(trajectory = trajectoriesm_sub[, "time"])
+
+write.table(true_trajectory, file = file.path(outdir_truth, paste0("sim1_sub1_truth_trajectory.txt")), quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
+
+
 
 # ------------------------------------------------------------------------
 ### Create a panel file
@@ -132,11 +143,36 @@ write.table(panel, file = file.path(outdir_panel, paste0("sim1_panel.txt")), quo
 
 
 # ------------------------------------------------------------------------
-### Save the true time trajectory
+### Plot marker distributions
 
-true_trajectory <- data.frame(trajectory = trajectoriesm_sub[, "time"])
 
-write.table(true_trajectory, file = file.path(outdir_truth, paste0("sim1_sub1_truth_trajectory.txt")), quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
+prefix <- "sim1_sub1_"
+
+dfm <- melt(trajectoriesm_sub)
+
+ggp <- ggplot(dfm, aes(x = value)) +
+  geom_density(adjust = 1, fill = "black", alpha = 0.3) +
+  facet_wrap(~ Var2, scales = "free") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+pdf(file.path(outdir_r, paste0(prefix, "distr_density.pdf")), width = 18, height = 18)
+print(ggp)
+dev.off()
+
+
+ggp <- ggplot(dfm, aes(x = value)) +
+  geom_histogram(bins = 100) +
+  facet_wrap(~ Var2, scales = "free") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+pdf(file.path(outdir_r, paste0(prefix, "distr_histogram.pdf")), width = 18, height = 18)
+print(ggp)
+dev.off()
+
+
+
 
 
 
@@ -152,6 +188,11 @@ write.table(true_trajectory, file = file.path(outdir_truth, paste0("sim1_sub1_tr
 
 
 sessionInfo()
+
+
+
+
+
 
 ##############################################################################
 ### Done!

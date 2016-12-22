@@ -9,8 +9,8 @@ dir_fcs_orig := $(RWD)/01_fcs_files_orig
 dir_fcs := $(RWD)/01_fcs_files
 dir_metadata := $(RWD)/01_metadata
 dir_panel := $(RWD)/01_panel
+dir_plot_cell_density := $(RWD)/02_plot_cell_density
 dir_results := $(RWD)/03_results
-dir_plot_cell_density := $(RWD)/04_plot_cell_density
 
 
 ### Define a list of FCS files that should be analyzed
@@ -36,11 +36,9 @@ mkdir_rout:
 
 $(dir_panel)/$(DATA)_panel.txt: $(dir_fcs_orig)/Bendall_et_al_Cell_Sample_A_basal.fcs $(RCODE)/00_panel_bendall_cytof.R
 	$R "--args rwd='$(RWD)' path_fcs_file='$(dir_fcs_orig)/Bendall_et_al_Cell_Sample_A_basal.fcs' outdir_panel='$(dir_panel)' prefix='$(DATA)_'" $(RCODE)/00_panel_bendall_cytof.R $(ROUT)/00_panel_bendall_cytof.Rout
-	tail $(ROUT)/00_panel_bendall_cytof.Rout
 
 $(dir_metadata)/$(DATA)_metadata.txt: $(RCODE)/00_metadata_bendall_cytof.R
 	$R "--args rwd='$(RWD)' path_fcs='$(dir_fcs_orig)' outdir_metadata='$(dir_metadata)' outdir_fcs='$(dir_fcs)' prefix='$(DATA)_'" $(RCODE)/00_metadata_bendall_cytof.R $(ROUT)/00_metadata_bendall_cytof.Rout
-	tail $(ROUT)/00_metadata_bendall_cytof.Rout
 
 
 # ----------------------------------------------------------------------
@@ -50,7 +48,6 @@ $(dir_metadata)/$(DATA)_metadata.txt: $(RCODE)/00_metadata_bendall_cytof.R
 define get_wanderlust_rule
 $(dir_results)/wanderlust0/$(1)_wanderlust0_trajectory.txt: $(dir_fcs)/$(1).fcs
 	$R "--args rwd='$(RWD)' path_fcs_file='$(dir_fcs)/$(1).fcs' outdir='$(dir_results)/wanderlust0' prefix='$(1)_wanderlust0_'" $(RCODE)/03_get_wanderlust.R $(ROUT)/03_get_wanderlust.Rout
-	tail $(ROUT)/03_get_wanderlust.Rout
 endef
 $(foreach i,$(FCS),$(eval $(call get_wanderlust_rule,$(i))))
 
@@ -65,9 +62,34 @@ plot_cell_density_goal: $(addprefix $(dir_plot_cell_density)/, $(addsuffix _wand
 define plot_cell_density_rule
 $(dir_plot_cell_density)/$(1)_wanderlust0_cell_density_density.pdf $(dir_plot_cell_density)/$(1)_wanderlust0_cell_density_hist.pdf: $(dir_results)/wanderlust0/$(1)_wanderlust0_trajectory.txt $(RCODE)/02_plot_cell_density_over_time.R
 	$R "--args rwd='$(RWD)' outdir='$(dir_plot_cell_density)' prefix='$(1)_wanderlust0_' path_trajectory='$(dir_results)/wanderlust0/$(1)_wanderlust0_trajectory.txt'" $(RCODE)/02_plot_cell_density_over_time.R $(ROUT)/02_plot_cell_density_over_time.Rout
-	tail $(ROUT)/02_plot_cell_density_over_time.Rout
 endef
 $(foreach i,$(FCS),$(eval $(call plot_cell_density_rule,$(i))))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

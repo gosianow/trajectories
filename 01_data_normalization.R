@@ -2,24 +2,24 @@
 ## <<>>
 
 # BioC 3.3
-# Created 20 Dec 2016
+# Created 22 Dec 2016
 
 ##############################################################################
 Sys.time()
 ##############################################################################
 
 # Load packages
-library(ggplot2)
-library(reshape2)
+library(flowCore)
 
 ##############################################################################
 # Test arguments
 ##############################################################################
 
 rwd='/Users/gosia/Dropbox/UZH/trajectories_data/simulation1'
-outdir='02_plot_cell_density'
-prefix='sim1_sub1_truth_'
-path_trajectory='01_truth/sim1_sub1_truth_trajectory.txt'
+outdir='01_data_norm'
+prefix='sim1_sub1_'
+path_fcs_file='01_fcs_files/sim1_sub1.fcs'
+path_panel='01_panel/sim1_panel.txt'
 
 
 ##############################################################################
@@ -45,59 +45,46 @@ if(!file.exists(outdir))
 
 ##############################################################################
 
-trajectory <- read.table(path_trajectory, header = TRUE, sep = "\t", as.is = TRUE)
+
+panel <- read.table(path_panel, header = TRUE, sep = "\t", as.is = TRUE)
+
+fcs <- read.FCS(path_fcs_file)
 
 
-ggp <- ggplot(trajectory, aes(x = trajectory)) +
-  geom_density(adjust = 0.5, fill = "blue", alpha = 0.3) + 
-  theme_bw()
+### Keep only those samples that are TRUE in panel$use_for_trajectories
+
+keep <- colnames(fcs) %in% panel$fcs_colnames[panel$use_for_trajectories]
+
+fcs_sub <- fcs[, keep]
 
 
-pdf(file.path(outdir, paste0(prefix, "cell_density_density.pdf")), width = 7, height = 3)
-print(ggp)
-dev.off()
+### Arcsineh normalization
+
+exprs(fcs_sub) <- asinh( exprs(fcs_sub) / 5 )
 
 
+### Save the results
 
-ggp <- ggplot(trajectory, aes(x = trajectory)) +
-  geom_histogram(bins = 200) + 
-  theme_bw()
-
-
-pdf(file.path(outdir, paste0(prefix, "cell_density_hist.pdf")), width = 7, height = 3)
-print(ggp)
-dev.off()
+write.FCS(fcs_sub, filename = file.path(outdir, paste0(prefix, "norm.fcs")))
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+saveRDS(exprs(fcs_sub), file.path(outdir, paste0(prefix, "norm.rds")))
 
 
 
 
 
 sessionInfo()
+
+
+
+
+
+
+
+
+
+
 
 ##############################################################################
 ### Done!
