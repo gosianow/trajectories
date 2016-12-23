@@ -14,6 +14,7 @@ dir_plot_cell_density_truth := $(RWD)/02_plot_cell_density_truth
 dir_plot_data_distr := $(RWD)/02_plot_data_distr
 dir_run_dim_reduction := $(RWD)/02_run_dim_reduction
 dir_plot_dim_reduction_truth := $(RWD)/02_plot_dim_reduction_truth
+dir_plot_markers_truth := $(RWD)/02_plot_markers_truth
 
 file_mat := albeck2008_Poisson_10000_25000_100.mat
 
@@ -23,7 +24,7 @@ DATA := sim1
 
 ## Define the default rule (makefiles are usually written so that the first target is for compiling the entire program)
 .PHONY: all
-all: mkdir_rout $(dir_panel)/$(DATA)_panel.txt $(foreach i,$(FCS),$(dir_fcs_norm)/$(i)_norm.rds) plot_cell_density_truth_goal plot_data_distr_goal plot_dim_reduction_truth_goal
+all: mkdir_rout $(foreach i,$(FCS),$(dir_fcs_norm)/$(i)_norm.rds) plot_cell_density_truth_goal plot_data_distr_goal plot_dim_reduction_truth_goal plot_markers_truth_goal
 
 
 ### Make sure no intermediate files are deleted
@@ -54,7 +55,7 @@ $(dir_fcs)/$(FCS).fcs $(dir_panel)/$(DATA)_panel.txt $(dir_truth)/$(FCS)_truth_t
 # ----------------------------------------------------------------------
 
 define data_normalization_rule
-$(dir_fcs_norm)/$(1)_norm.fcs $(dir_fcs_norm)/$(1)_norm.rds: $(dir_fcs)/$(1).fcs $(RCODE)/01_data_normalization.R
+$(dir_fcs_norm)/$(1)_norm.fcs $(dir_fcs_norm)/$(1)_norm.rds: $(dir_fcs)/$(1).fcs $(dir_panel)/$(DATA)_panel.txt $(RCODE)/01_data_normalization.R
 	$R "--args rwd='$(RWD)' outdir='$(dir_fcs_norm)' prefix='$(1)_' path_fcs_file='$(dir_fcs)/$(1).fcs' path_panel='$(dir_panel)/$(DATA)_panel.txt'" $(RCODE)/01_data_normalization.R $(ROUT)/01_data_normalization.Rout
 endef
 $(foreach i,$(FCS),$(eval $(call data_normalization_rule,$(i))))
@@ -100,11 +101,11 @@ $(foreach i,$(FCS),$(foreach j,$(DIM_RED_METHODS),$(eval $(call run_dim_reductio
 ### Plots for the true trajectory
 ##########################################################################################################
 
+METHOD := truth
+
 # ----------------------------------------------------------------------
 ### Plot cell density over time for the truth trajectory
 # ----------------------------------------------------------------------
-
-METHOD := truth
 
 .PHONY: plot_cell_density_truth_goal
 plot_cell_density_truth_goal: $(foreach i,$(FCS),$(dir_plot_cell_density_truth)/$(i)_$(METHOD)_cell_density_density.pdf)
@@ -119,8 +120,6 @@ $(foreach i,$(FCS),$(eval $(call plot_cell_density_truth_rule,$(i))))
 # ----------------------------------------------------------------------
 ### Plot dimension reduction with trajectories from different methods as a heat
 # ----------------------------------------------------------------------
-
-METHOD := truth
 
 .PHONY: plot_dim_reduction_truth_goal
 plot_dim_reduction_truth_goal: $(foreach i,$(FCS),$(foreach j,$(DIM_RED_METHODS),$(dir_plot_dim_reduction_truth)/$(i)_norm_$(METHOD)_$(j)_2d_plot.pdf)) $(foreach i,$(FCS),$(foreach j,$(DIM_RED_METHODS),$(dir_plot_dim_reduction_truth)/$(i)_norm_$(METHOD)_$(j)_3d_plot.pdf))
@@ -139,6 +138,19 @@ $(dir_plot_dim_reduction_truth)/$(1)_norm_$(METHOD)_$(2)_3d_plot.pdf: $(dir_run_
 endef
 $(foreach i,$(FCS),$(foreach j,$(DIM_RED_METHODS),$(eval $(call plot_dim_reduction_3d_truth_rule,$(i),$(j)))))
 
+
+# ----------------------------------------------------------------------
+### Plot marker expression over time for the truth trajectory
+# ----------------------------------------------------------------------
+
+.PHONY: plot_markers_truth_goal
+plot_markers_truth_goal: $(foreach i,$(FCS),$(dir_plot_markers_truth)/$(i)_norm_$(METHOD)_markers_density.pdf)
+
+define plot_markers_truth_rule
+$(dir_plot_markers_truth)/$(1)_norm_$(METHOD)_markers_density.pdf: $(dir_truth)/$(1)_$(METHOD)_trajectory.txt $(dir_fcs_norm)/$(1)_norm.fcs $(RCODE)/02_plot_markers_over_time.R
+	$R "--args rwd='$(RWD)' outdir='$(dir_plot_markers_truth)' prefix='$(1)_norm_$(METHOD)_' path_trajectory='$(dir_truth)/$(1)_$(METHOD)_trajectory.txt' path_fcs_file='$(dir_fcs_norm)/$(1)_norm.fcs'" $(RCODE)/02_plot_markers_over_time.R $(ROUT)/02_plot_markers_over_time.Rout
+endef
+$(foreach i,$(FCS),$(eval $(call plot_markers_truth_rule,$(i))))
 
 
 

@@ -14,7 +14,7 @@ dir_run_dim_reduction := $(RWD)/02_run_dim_reduction
 dir_results := $(RWD)/03_results
 dir_plot_cell_density := $(RWD)/04_plot_cell_density
 dir_plot_dim_reduction := $(RWD)/04_plot_dim_reduction
-
+dir_plot_markers := $(RWD)/04_plot_markers
 
 ### Define a list of FCS files that should be analyzed
 FCS_ORIG := Bendall_et_al_Cell_Sample_A_basal Bendall_et_al_Cell_Sample_B_basal Bendall_et_al_Cell_Sample_C_basal Bendall_et_al_Cell_Sample_D_basal
@@ -23,7 +23,7 @@ DATA := bendall
 
 ## Define the default rule (makefiles are usually written so that the first target is for compiling the entire program)
 .PHONY: all
-all: mkdir_rout $(dir_panel)/$(DATA)_panel.txt $(foreach i,$(FCS),$(dir_fcs_norm)/$(i)_norm.rds) plot_data_distr_goal plot_cell_density_goal plot_dim_reduction_goal
+all: mkdir_rout $(foreach i,$(FCS),$(dir_fcs_norm)/$(i)_norm.rds) plot_data_distr_goal plot_cell_density_goal plot_dim_reduction_goal plot_markers_goal
 
 
 ### Make sure no intermediate files are deleted
@@ -66,7 +66,7 @@ $(dir_panel)/$(DATA)_panel.txt: $(dir_fcs)/$(word 1,$(FCS)).fcs $(RCODE)/00_pane
 # ----------------------------------------------------------------------
 
 define data_normalization_rule
-$(dir_fcs_norm)/$(1)_norm.fcs $(dir_fcs_norm)/$(1)_norm.rds: $(dir_fcs)/$(1).fcs $(RCODE)/01_data_normalization.R
+$(dir_fcs_norm)/$(1)_norm.fcs $(dir_fcs_norm)/$(1)_norm.rds: $(dir_fcs)/$(1).fcs $(dir_panel)/$(DATA)_panel.txt $(RCODE)/01_data_normalization.R
 	$R "--args rwd='$(RWD)' outdir='$(dir_fcs_norm)' prefix='$(1)_' path_fcs_file='$(dir_fcs)/$(1).fcs' path_panel='$(dir_panel)/$(DATA)_panel.txt'" $(RCODE)/01_data_normalization.R $(ROUT)/01_data_normalization.Rout
 endef
 $(foreach i,$(FCS),$(eval $(call data_normalization_rule,$(i))))
@@ -130,11 +130,11 @@ $(foreach i,$(FCS),$(eval $(call get_wanderlust_rule,$(i))))
 ### Plot results of different methods
 ##########################################################################################################
 
+METHODS := wanderlust0
+
 # ----------------------------------------------------------------------
 ### Plot cell density over time for different trajectory method
 # ----------------------------------------------------------------------
-
-METHODS := wanderlust0
 
 .PHONY: plot_cell_density_goal
 plot_cell_density_goal: $(foreach i,$(FCS),$(foreach j,$(METHODS),$(dir_plot_cell_density)/$(i)_$(j)_cell_density_density.pdf))
@@ -149,8 +149,6 @@ $(foreach i,$(FCS),$(foreach j,$(METHODS),$(eval $(call plot_cell_density_rule,$
 # ----------------------------------------------------------------------
 ### Plot dimension reduction with trajectories from different methods as a heat
 # ----------------------------------------------------------------------
-
-METHODS := wanderlust0
 
 .PHONY: plot_dim_reduction_goal
 plot_dim_reduction_goal: $(foreach i,$(FCS),$(foreach j,$(METHODS),$(foreach k,$(DIM_RED_METHODS),$(dir_plot_dim_reduction)/$(i)_norm_$(j)_$(k)_2d_plot.pdf))) $(foreach i,$(FCS),$(foreach j,$(METHODS),$(foreach k,$(DIM_RED_METHODS),$(dir_plot_dim_reduction)/$(i)_norm_$(j)_$(k)_3d_plot.pdf)))
@@ -170,9 +168,18 @@ endef
 $(foreach i,$(FCS),$(foreach j,$(METHODS),$(foreach k,$(DIM_RED_METHODS),$(eval $(call plot_dim_reduction_3d_rule,$(i),$(j),$(k))))))
 
 
+# ----------------------------------------------------------------------
+### Plot marker expression over time for different trajectory method
+# ----------------------------------------------------------------------
 
+.PHONY: plot_markers_goal
+plot_markers_goal: $(foreach i,$(FCS),$(foreach j,$(METHODS),$(dir_plot_markers)/$(i)_norm_$(j)_markers_density.pdf))
 
-
+define plot_markers_rule
+$(dir_plot_markers)/$(1)_norm_$(2)_markers_density.pdf: $(dir_results)/$(2)/$(1)_$(2)_trajectory.txt $(dir_fcs_norm)/$(1)_norm.fcs $(RCODE)/02_plot_markers_over_time.R
+	$R "--args rwd='$(RWD)' outdir='$(dir_plot_markers)' prefix='$(1)_norm_$(2)_' path_trajectory='$(dir_results)/$(2)/$(1)_$(2)_trajectory.txt' path_fcs_file='$(dir_fcs_norm)/$(1)_norm.fcs'" $(RCODE)/02_plot_markers_over_time.R $(ROUT)/02_plot_markers_over_time.Rout
+endef
+$(foreach i,$(FCS),$(foreach j,$(METHODS),$(eval $(call plot_markers_rule,$(i),$(j)))))
 
 
 
