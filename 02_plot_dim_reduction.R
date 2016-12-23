@@ -18,8 +18,8 @@ library(reshape2)
 
 rwd='/Users/gosia/Dropbox/UZH/trajectories_data/simulation1'
 outdir='02_plot_dim_reduction'
-prefix='sim1_sub1_norm_truth_pca_'
-path_dim_reduction='02_run_dim_reduction/sim1_sub1_norm_pca.txt'
+prefix='sim1_sub1_norm_truth_pca_2d_'
+path_dim_reduction='02_run_dim_reduction/sim1_sub1_norm_pca_2d_data.txt'
 path_trajectory='01_truth/sim1_sub1_truth_trajectory.txt'
 
 ##############################################################################
@@ -65,7 +65,7 @@ ggp <- ggplot(ggdf,  aes(x = dim1, y = dim2, color = trajectory)) +
   scale_colour_distiller(palette = "Spectral")
 
 
-pdf(file.path(outdir, paste0(prefix, "dim_red.pdf")), width = 9, height = 7)
+pdf(file.path(outdir, paste0(prefix, "plot.pdf")), width = 9, height = 7)
 print(ggp)
 dev.off()
 

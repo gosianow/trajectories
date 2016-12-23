@@ -2,28 +2,25 @@
 ## <<>>
 
 # BioC 3.3
-# Created 22 Dec 2016
+# Created 23 Dec 2016
 
 ##############################################################################
 Sys.time()
 ##############################################################################
 
 # Load packages
-library(flowCore)
-library(cytofkit)
-library(Rtsne)
-
+library(scatterplot3d)
+library(RColorBrewer)
 
 ##############################################################################
 # Test arguments
 ##############################################################################
 
 rwd='/Users/gosia/Dropbox/UZH/trajectories_data/simulation1'
-outdir='02_run_dim_reduction'
-prefix='sim1_sub1_norm_tsne_2d_'
-path_fcs_file='01_data_norm/sim1_sub1_norm.fcs'
-method='tsne'
-out_dim=2
+outdir='02_plot_dim_reduction'
+prefix='sim1_sub1_norm_truth_pca_3d_'
+path_dim_reduction='02_run_dim_reduction/sim1_sub1_norm_pca_3d_data.txt'
+path_trajectory='01_truth/sim1_sub1_truth_trajectory.txt'
 
 ##############################################################################
 # Read in the arguments
@@ -45,65 +42,35 @@ setwd(rwd)
 if(!file.exists(outdir)) 
   dir.create(outdir, recursive = TRUE)
 
-rand_seed <- 1234
 
 ##############################################################################
 
 
-fcs <- read.FCS(path_fcs_file)
+data <- read.table(path_dim_reduction, header = TRUE, sep = "\t", as.is = TRUE)
+
+trajectory <- read.table(path_trajectory, header = TRUE, sep = "\t", as.is = TRUE)
+trajectory <- trajectory$trajectory
 
 
-# ---------------------------------------
-# Dimension reduction analysis
-# ---------------------------------------
+### Create colors 
+color_palette <- colorRampPalette(rev(brewer.pal(n = 11, name = "Spectral")))(101)
 
-### Subsampling
-# max_nr_cells=5000
-# set.seed(rand_seed)
-# keep <- sample(nrow(fcs), max_nr_cells, replace = FALSE)
-# e <- exprs(fcs)[keep, ]
+trajectory_norm <- round((trajectory - min(trajectory)) /(max(trajectory) - min(trajectory)) * 100 + 1)
 
-e <- exprs(fcs)
-
-### find duplicates
-dups <- duplicated(e)  
-
-e <- e[which(!dups), ]
+trajectory_colors <- color_palette[trajectory_norm]
 
 
-### Remove constant/zero columns
-
-cz_cols <- apply(e, 2, function(x){
-  length(table(x)) == 1
-})
-
-e <- e[, !cz_cols]
+df <- cbind(data, trajectory, trajectory_colors)
 
 
-### Run dim reduction
-### tSNE does not work for out_dim = 3
+### Plotting
 
-if(method == 'tsne'){
-  
-  set.seed(rand_seed)
-  tsne_out <- Rtsne(e, initial_dims = ncol(e), dims = out_dim, check_duplicates = FALSE, pca = TRUE)
-  mapped <- tsne_out$Y
-  
-}else{
-  
-  mapped <- cytofkit::cytof_dimReduction(e, method = method, out_dim = out_dim)
-  
-}
+pdf(file.path(outdir, paste0(prefix, "plot.pdf")), width = 9, height = 7)
 
+scatterplot3d(x = df$dim1, y = df$dim2, z = df$dm3, color = df$trajectory_colors, pch = 19, cex.symbols = 0.5, xlab="dim1", ylab="dim2", zlab="dim3")
 
-dim_names <- paste0("dim", 1:out_dim)
+dev.off()
 
-colnames(mapped) <- dim_names
-
-
-# Save the results
-
-write.table(mapped, file.path(outdir, paste0(prefix, "data.txt")), sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
 
 
 
