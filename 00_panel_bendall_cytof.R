@@ -17,7 +17,7 @@ library(limma)
 ##############################################################################
 
 rwd='/Users/gosia/Dropbox/UZH/trajectories_data/bendall_cytof'
-path_fcs_file='01_fcs_files_orig/Bendall_et_al_Cell_Sample_A_basal.fcs'
+path_fcs_file='01_fcs/bendall_sample_a.fcs'
 outdir_panel='01_panel'
 prefix='bendall_'
 

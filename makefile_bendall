@@ -5,11 +5,10 @@ RCODE := /Users/gosia/Dropbox/UZH/trajectories_code
 RWD := $(RWD_MAIN)/bendall_cytof
 ROUT := $(RWD)/Rout
 
-dir_fcs_orig := $(RWD)/01_fcs_files_orig
-dir_fcs := $(RWD)/01_fcs_files
-dir_metadata := $(RWD)/01_metadata
+dir_fcs_orig := $(RWD)/01_fcs_orig
+dir_fcs := $(RWD)/01_fcs
 dir_panel := $(RWD)/01_panel
-dir_data_norm := $(RWD)/01_data_norm
+dir_fcs_norm := $(RWD)/01_fcs_norm
 dir_plot_data_distr := $(RWD)/02_plot_data_distr
 dir_run_dim_reduction := $(RWD)/02_run_dim_reduction
 dir_results := $(RWD)/03_results
@@ -18,13 +17,13 @@ dir_plot_dim_reduction := $(RWD)/04_plot_dim_reduction
 
 
 ### Define a list of FCS files that should be analyzed
-DATA := bendall
+FCS_ORIG := Bendall_et_al_Cell_Sample_A_basal Bendall_et_al_Cell_Sample_B_basal Bendall_et_al_Cell_Sample_C_basal Bendall_et_al_Cell_Sample_D_basal
 FCS := bendall_sample_a bendall_sample_b bendall_sample_c bendall_sample_d
-
+DATA := bendall
 
 ## Define the default rule (makefiles are usually written so that the first target is for compiling the entire program)
 .PHONY: all
-all: mkdir_rout $(dir_panel)/$(DATA)_panel.txt $(dir_metadata)/$(DATA)_metadata.txt plot_data_distr_goal plot_cell_density_goal plot_dim_reduction_goal
+all: mkdir_rout $(dir_panel)/$(DATA)_panel.txt $(foreach i,$(FCS),$(dir_fcs_norm)/$(i)_norm.rds) plot_data_distr_goal plot_cell_density_goal plot_dim_reduction_goal
 
 
 ### Make sure no intermediate files are deleted
@@ -35,28 +34,40 @@ mkdir_rout:
 	mkdir -p $(ROUT)
 
 ##########################################################################################################
-### Data preparation
+### Data extracting
 ##########################################################################################################
 
 # ----------------------------------------------------------------------
-### Create panel and metadata files
+### Copy specified fcs files from dir_fcs_orig/ to dir_fcs/
 # ----------------------------------------------------------------------
 
-$(dir_panel)/$(DATA)_panel.txt: $(dir_fcs_orig)/Bendall_et_al_Cell_Sample_A_basal.fcs $(RCODE)/00_panel_bendall_cytof.R
-	$R "--args rwd='$(RWD)' path_fcs_file='$(dir_fcs_orig)/Bendall_et_al_Cell_Sample_A_basal.fcs' outdir_panel='$(dir_panel)' prefix='$(DATA)_'" $(RCODE)/00_panel_bendall_cytof.R $(ROUT)/00_panel_bendall_cytof.Rout
+define copy_fcs_rule
+$(dir_fcs)/$(word $(1),$(FCS)).fcs: $(dir_fcs_orig)/$(word $(1),$(FCS_ORIG)).fcs
+	cp $(dir_fcs_orig)/$(word $(1),$(FCS_ORIG)).fcs $(dir_fcs)/$(word $(1),$(FCS)).fcs
+endef
+$(foreach i,$(words $(FCS)),$(eval $(call copy_fcs_rule,$(i))))
 
-$(dir_metadata)/$(DATA)_metadata.txt: $(RCODE)/00_metadata_bendall_cytof.R
-	$R "--args rwd='$(RWD)' path_fcs='$(dir_fcs_orig)' outdir_metadata='$(dir_metadata)' outdir_fcs='$(dir_fcs)' prefix='$(DATA)_'" $(RCODE)/00_metadata_bendall_cytof.R $(ROUT)/00_metadata_bendall_cytof.Rout
+
+# ----------------------------------------------------------------------
+### Create panel
+# ----------------------------------------------------------------------
+
+$(dir_panel)/$(DATA)_panel.txt: $(dir_fcs)/$(word 1,$(FCS)).fcs $(RCODE)/00_panel_$(DATA)_cytof.R
+	$R "--args rwd='$(RWD)' path_fcs_file='$(dir_fcs)/$(word 1,$(FCS)).fcs' outdir_panel='$(dir_panel)' prefix='$(DATA)_'" $(RCODE)/00_panel_$(DATA)_cytof.R $(ROUT)/00_panel_$(DATA)_cytof.Rout
 
 
+
+##########################################################################################################
+### Data preparation
+##########################################################################################################
 
 # ----------------------------------------------------------------------
 ### Data normalization - arcsineh
 # ----------------------------------------------------------------------
 
 define data_normalization_rule
-$(dir_data_norm)/$(1)_norm.fcs $(dir_data_norm)/$(1)_norm.rds: $(dir_fcs)/$(1).fcs $(RCODE)/01_data_normalization.R
-	$R "--args rwd='$(RWD)' outdir='$(dir_data_norm)' prefix='$(1)_' path_fcs_file='$(dir_fcs)/$(1).fcs' path_panel='$(dir_panel)/$(DATA)_panel.txt'" $(RCODE)/01_data_normalization.R $(ROUT)/01_data_normalization.Rout
+$(dir_fcs_norm)/$(1)_norm.fcs $(dir_fcs_norm)/$(1)_norm.rds: $(dir_fcs)/$(1).fcs $(RCODE)/01_data_normalization.R
+	$R "--args rwd='$(RWD)' outdir='$(dir_fcs_norm)' prefix='$(1)_' path_fcs_file='$(dir_fcs)/$(1).fcs' path_panel='$(dir_panel)/$(DATA)_panel.txt'" $(RCODE)/01_data_normalization.R $(ROUT)/01_data_normalization.Rout
 endef
 $(foreach i,$(FCS),$(eval $(call data_normalization_rule,$(i))))
 
@@ -70,8 +81,8 @@ $(foreach i,$(FCS),$(eval $(call data_normalization_rule,$(i))))
 plot_data_distr_goal: $(foreach i,$(FCS),$(dir_plot_data_distr)/$(i)_norm_distr_density.pdf)
 
 define plot_data_distr_rule
-$(dir_plot_data_distr)/$(1)_norm_distr_density.pdf: $(dir_data_norm)/$(1)_norm.fcs $(RCODE)/02_plot_data_distr.R
-	$R "--args rwd='$(RWD)' outdir='$(dir_plot_data_distr)' prefix='$(1)_norm_' path_fcs_file='$(dir_data_norm)/$(1)_norm.fcs'" $(RCODE)/02_plot_data_distr.R $(ROUT)/02_plot_data_distr.Rout
+$(dir_plot_data_distr)/$(1)_norm_distr_density.pdf: $(dir_fcs_norm)/$(1)_norm.fcs $(RCODE)/02_plot_data_distr.R
+	$R "--args rwd='$(RWD)' outdir='$(dir_plot_data_distr)' prefix='$(1)_norm_' path_fcs_file='$(dir_fcs_norm)/$(1)_norm.fcs'" $(RCODE)/02_plot_data_distr.R $(ROUT)/02_plot_data_distr.Rout
 endef
 $(foreach i,$(FCS),$(eval $(call plot_data_distr_rule,$(i))))
 
@@ -85,15 +96,15 @@ DIM_RED_METHODS := pca tsne diffusion
 
 ### 2D
 define run_dim_reduction_rule
-$(dir_run_dim_reduction)/$(1)_norm_$(2)_2d_data.txt: $(dir_data_norm)/$(1)_norm.fcs $(RCODE)/02_run_dim_reduction.R
-	$R "--args rwd='$(RWD)' outdir='$(dir_run_dim_reduction)' prefix='$(1)_norm_$(2)_2d_' path_fcs_file='$(dir_data_norm)/$(1)_norm.fcs' method='$(2)' out_dim=2" $(RCODE)/02_run_dim_reduction.R $(ROUT)/02_run_dim_reduction.Rout
+$(dir_run_dim_reduction)/$(1)_norm_$(2)_2d_data.txt: $(dir_fcs_norm)/$(1)_norm.fcs $(RCODE)/02_run_dim_reduction.R
+	$R "--args rwd='$(RWD)' outdir='$(dir_run_dim_reduction)' prefix='$(1)_norm_$(2)_2d_' path_fcs_file='$(dir_fcs_norm)/$(1)_norm.fcs' method='$(2)' out_dim=2" $(RCODE)/02_run_dim_reduction.R $(ROUT)/02_run_dim_reduction.Rout
 endef
 $(foreach i,$(FCS),$(foreach j,$(DIM_RED_METHODS),$(eval $(call run_dim_reduction_rule,$(i),$(j)))))
 
 ### 3D
 define run_dim_reduction_rule
-$(dir_run_dim_reduction)/$(1)_norm_$(2)_3d_data.txt: $(dir_data_norm)/$(1)_norm.fcs $(RCODE)/02_run_dim_reduction.R
-	$R "--args rwd='$(RWD)' outdir='$(dir_run_dim_reduction)' prefix='$(1)_norm_$(2)_3d_' path_fcs_file='$(dir_data_norm)/$(1)_norm.fcs' method='$(2)' out_dim=3" $(RCODE)/02_run_dim_reduction.R $(ROUT)/02_run_dim_reduction.Rout
+$(dir_run_dim_reduction)/$(1)_norm_$(2)_3d_data.txt: $(dir_fcs_norm)/$(1)_norm.fcs $(RCODE)/02_run_dim_reduction.R
+	$R "--args rwd='$(RWD)' outdir='$(dir_run_dim_reduction)' prefix='$(1)_norm_$(2)_3d_' path_fcs_file='$(dir_fcs_norm)/$(1)_norm.fcs' method='$(2)' out_dim=3" $(RCODE)/02_run_dim_reduction.R $(ROUT)/02_run_dim_reduction.Rout
 endef
 $(foreach i,$(FCS),$(foreach j,$(DIM_RED_METHODS),$(eval $(call run_dim_reduction_rule,$(i),$(j)))))
 

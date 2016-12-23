@@ -20,7 +20,6 @@ library(reshape2)
 ##############################################################################
 
 rwd='/Users/gosia/Dropbox/UZH/trajectories_data/simulation1'
-outdir_r='01_data_r'
 outdir_fcs='01_fcs_files'
 outdir_panel='01_panel'
 outdir_truth='01_truth'
@@ -43,9 +42,6 @@ cat(paste0(args, collapse = "\n"), fill = TRUE)
 ##############################################################################
 
 setwd(rwd)
-
-if(!file.exists(outdir_r)) 
-  dir.create(outdir_r, recursive = TRUE)
 
 if(!file.exists(outdir_fcs)) 
   dir.create(outdir_fcs, recursive = TRUE)
@@ -87,8 +83,6 @@ trajectoriesm <- do.call(rbind, trajectories_list)
 colnames(trajectoriesm)[!grepl("simulation|time", colnames(trajectoriesm))] <- species_names
 
 
-saveRDS(trajectoriesm, file.path(outdir_r, paste0("sim1.rds")))
-
 
 ### Save as FCS file 
 
@@ -117,8 +111,6 @@ cell_sub <- 1:10000
 
 trajectoriesm_sub <- trajectoriesm[cell_sub, ]
 
-saveRDS(trajectoriesm_sub, file.path(outdir_r, paste0("sim1_sub1.rds")))
-
 trajectories_fcs_sub <- flowFrame(exprs = trajectoriesm[cell_sub, ], parameters = parameters, description=list())
 
 write.FCS(trajectories_fcs_sub, filename = file.path(outdir_fcs, paste0("sim1_sub1.fcs")))
@@ -142,39 +134,6 @@ write.table(panel, file = file.path(outdir_panel, paste0("sim1_panel.txt")), quo
 
 
 
-# ------------------------------------------------------------------------
-### Plot marker distributions
-
-
-prefix <- "sim1_sub1_"
-
-dfm <- melt(trajectoriesm_sub)
-
-ggp <- ggplot(dfm, aes(x = value)) +
-  geom_density(adjust = 1, fill = "black", alpha = 0.3) +
-  facet_wrap(~ Var2, scales = "free") +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
-pdf(file.path(outdir_r, paste0(prefix, "distr_density.pdf")), width = 18, height = 18)
-print(ggp)
-dev.off()
-
-
-ggp <- ggplot(dfm, aes(x = value)) +
-  geom_histogram(bins = 100) +
-  facet_wrap(~ Var2, scales = "free") +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
-pdf(file.path(outdir_r, paste0(prefix, "distr_histogram.pdf")), width = 18, height = 18)
-print(ggp)
-dev.off()
-
-
-
-
-
 
 
 
@@ -188,6 +147,7 @@ dev.off()
 
 
 sessionInfo()
+
 
 
 
