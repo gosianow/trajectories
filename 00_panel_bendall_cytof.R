@@ -1,7 +1,7 @@
 ##############################################################################
 ## <<>>
 
-# BioC 3.3
+# BioC 3.4
 # Created 20 Dec 2016
 
 ##############################################################################
@@ -16,7 +16,7 @@ library(limma)
 # Test arguments
 ##############################################################################
 
-rwd='/Users/gosia/Dropbox/UZH/trajectories_data/bendall_cytof'
+rwd='trajectories_data/bendall_cytof'
 path_fcs_file='01_fcs/bendall_sample_a.fcs'
 outdir_panel='01_panel'
 prefix='bendall_'

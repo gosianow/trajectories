@@ -1,7 +1,7 @@
 ##############################################################################
 ## <<>>
 
-# BioC 3.3
+# BioC 3.4
 # Created 22 Dec 2016
 
 ##############################################################################
@@ -17,7 +17,7 @@ library(flowCore)
 # Test arguments
 ##############################################################################
 
-rwd='/Users/gosia/Dropbox/UZH/trajectories_data/simulation1'
+rwd='trajectories_data/simulation1'
 outdir='02_plot_data_distr'
 prefix='sim1_sub1_norm_'
 path_fcs_file='01_data_norm/sim1_sub1_norm.fcs'

@@ -1,7 +1,7 @@
 ##############################################################################
 ## <<>>
 
-# BioC 3.3
+# BioC 3.4
 # Created 20 Dec 2016
 
 ##############################################################################
@@ -16,7 +16,7 @@ library(reshape2)
 # Test arguments
 ##############################################################################
 
-rwd='/Users/gosia/Dropbox/UZH/trajectories_data/simulation1'
+rwd='trajectories_data/simulation1'
 outdir='02_plot_cell_density'
 prefix='sim1_sub1_truth_'
 path_trajectory='01_truth/sim1_sub1_truth_trajectory.txt'

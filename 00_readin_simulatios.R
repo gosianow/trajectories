@@ -1,7 +1,7 @@
 ##############################################################################
 ## <<>>
 
-# BioC 3.3
+# BioC 3.4
 # Created 20 Dec 2016
 
 ##############################################################################
@@ -15,11 +15,12 @@ library(Biobase)
 library(ggplot2)
 library(reshape2)
 
+
 ##############################################################################
 # Test arguments
 ##############################################################################
 
-rwd='/Users/gosia/Dropbox/UZH/trajectories_data/simulation1'
+rwd='trajectories_data/simulation1'
 outdir_fcs='01_fcs_files'
 outdir_panel='01_panel'
 outdir_truth='01_truth'

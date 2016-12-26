@@ -1,7 +1,7 @@
 ##############################################################################
 ## <<>>
 
-# BioC 3.3
+# BioC 3.4
 # Created 23 Dec 2016
 
 ##############################################################################
@@ -18,7 +18,7 @@ library(RColorBrewer)
 # Test arguments
 ##############################################################################
 
-rwd='/Users/gosia/Dropbox/UZH/trajectories_data/simulation1'
+rwd='trajectories_data/simulation1'
 outdir='02_plot_markers_truth'
 prefix='sim1_sub1_norm_truth_'
 path_trajectory='01_truth/sim1_sub1_truth_trajectory.txt'

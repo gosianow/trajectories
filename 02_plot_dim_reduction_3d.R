@@ -1,7 +1,7 @@
 ##############################################################################
 ## <<>>
 
-# BioC 3.3
+# BioC 3.4
 # Created 23 Dec 2016
 
 ##############################################################################
@@ -16,7 +16,7 @@ library(RColorBrewer)
 # Test arguments
 ##############################################################################
 
-rwd='/Users/gosia/Dropbox/UZH/trajectories_data/simulation1'
+rwd='trajectories_data/simulation1'
 outdir='02_plot_dim_reduction'
 prefix='sim1_sub1_norm_truth_pca_3d_'
 path_dim_reduction='02_run_dim_reduction/sim1_sub1_norm_pca_3d_data.txt'

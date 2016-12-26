@@ -1,7 +1,7 @@
 ##############################################################################
 ## <<>>
 
-# BioC 3.3
+# BioC 3.4
 # Created 22 Dec 2016
 
 ##############################################################################
@@ -18,7 +18,7 @@ library(Rtsne)
 # Test arguments
 ##############################################################################
 
-rwd='/Users/gosia/Dropbox/UZH/trajectories_data/simulation1'
+rwd='trajectories_data/simulation1'
 outdir='02_run_dim_reduction'
 prefix='sim1_sub1_norm_tsne_2d_'
 path_fcs_file='01_data_norm/sim1_sub1_norm.fcs'

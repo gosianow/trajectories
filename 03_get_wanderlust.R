@@ -1,7 +1,7 @@
 ##############################################################################
 ## <<>>
 
-# BioC 3.3
+# BioC 3.4
 # Created 21 Dec 2016
 
 ##############################################################################
@@ -16,7 +16,7 @@ library(flowCore)
 ##############################################################################
 
 
-rwd='/Users/gosia/Dropbox/UZH/trajectories_data/bendall_cytof'
+rwd='trajectories_data/bendall_cytof'
 path_fcs_file='01_fcs_files/bendall_sample_a.fcs'
 outdir='03_results/wanderlust0'
 prefix='bendall_sample_a_wanderlust0_'
