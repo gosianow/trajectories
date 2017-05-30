@@ -10,3 +10,11 @@
 
 # Temporal files
 *tmp*
+.Rproj.user
+
+._*
+scripts/._*
+
+data_bendall/
+data_sim1/
+
